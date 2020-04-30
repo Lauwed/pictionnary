@@ -2,103 +2,144 @@
     <head>
         <meta charset="utf-8" />
         <title>Pictionnary</title>
+        <style>
+            body {
+                margin: 0 15%;
+                font-family: sans-serif;
+            }
+            h1 {
+                text-align: center;
+            }
+            canvas {
+                box-shadow: 0 0 10px rgba(0,0,0,0.3);
+                border-radius: 10px;
+            }
+
+            .container {
+                position: fixed;
+                top: 50%;
+                left: calc(15% + 500px + 6em);
+                transform: translateY(-50%);
+            }
+
+            .settings__input {
+                display: flex;
+                flex-direction: column;
+                margin-bottom: 1em;
+            }
+
+            .users {
+                margin: 2em 0;
+            }
+            .users__list {
+                padding: 0;
+                margin: 0;
+                list-style: none;
+            }
+        </style>
         <script src="/socket.io/socket.io.js"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.0.0/p5.min.js"></script>
     </head>
     <body>
         <h1>Pictionnary</h1>
-        <form>
-            <div>
-                <label>Line Weight :</label>
-                <input class="js-weight" type="range" min="1" max="50" value="4" />
+        <div class="container">
+            <form class="settings">
+                <h2>Settings :</h2>
+                <div class="settings__input">
+                    <label>Line Weight :</label>
+                    <input class="js-weight" type="range" min="1" max="50" value="4" />
+                </div>
+                <div class="settings__input">
+                    <label>Color :</label>
+                    <input class="js-color" type="color" value="#000000" />
+                </div>
+            </form>
+            <div class="users">
+                <h2>Users :</h2>
+                <ul class="users__list js-users"></ul>
             </div>
-            <div>
-                <label>Color :</label>
-                <input class="js-color" type="color" value="#000000" />
-            </div>
-        </form>
-        <ul class="users js-users"></ul>
-
-        <script>
-            // Client side
-            let socket = io();
-            let isActive = false;
-
-            const username = prompt('Tell me your name');
-
-            // trigger an event to the socket identified by the string name
-            socket.emit('username', username);
-
-            const inputWeight = document.querySelector('.js-weight');
-            const inputColor = document.querySelector('.js-color');
-            const userList = document.querySelector('.js-users');
-
-            function setup() {
-                // Setup ; first function called
-                // Called only once
-                createCanvas(500, 500);
-            }
-
-            function mouseDragged() {
-                // Is called once every time the mouse moves
-                // and a mouse button is pressed
-                if(!isActive) return;
-
-                // Set the weight and color choosed by the user
-                strokeWeight(inputWeight.value);
-                stroke(inputColor.value);
-
-                // Draw a line
-                // pmouseX and pmouseY contains the position
-                // of the mouse or finger in the frame previous
-                // of the current frame, relative to (0,0) of
-                // the canavas
-                line(mouseX, mouseY, pmouseX, pmouseY);
-                // Trigger an event to put the data in the server
-                // by tacking the data as parameters
-                socket.emit('line', {
-                    mouseX,
-                    mouseY,
-                    pmouseX,
-                    pmouseY,
-                    weight: inputWeight.value,
-                    color: inputColor.value
+    
+            <script>
+                // Client side
+                let socket = io();
+                let isActive = false;
+    
+                const username = prompt('Tell me your name');
+    
+                // trigger an event to the socket identified by the string name
+                socket.emit('username', username);
+    
+                const inputWeight = document.querySelector('.js-weight');
+                const inputColor = document.querySelector('.js-color');
+                const userList = document.querySelector('.js-users');
+    
+                function setup() {
+                    // Setup ; first function called
+                    // Called only once
+                    createCanvas(500, 500);
+                }
+    
+                function mouseDragged() {
+                    // Is called once every time the mouse moves
+                    // and a mouse button is pressed
+                    if(!isActive) return;
+    
+                    // Set the weight and color choosed by the user
+                    strokeWeight(inputWeight.value);
+                    stroke(inputColor.value);
+    
+                    // Draw a line
+                    // pmouseX and pmouseY contains the position
+                    // of the mouse or finger in the frame previous
+                    // of the current frame, relative to (0,0) of
+                    // the canavas
+                    line(mouseX, mouseY, pmouseX, pmouseY);
+                    // Trigger an event to put the data in the server
+                    // by tacking the data as parameters
+                    socket.emit('line', {
+                        mouseX,
+                        mouseY,
+                        pmouseX,
+                        pmouseY,
+                        weight: inputWeight.value,
+                        color: inputColor.value
+                    });
+                }
+    
+                socket.on('line', (data) => {
+                    stroke(data.color);
+                    strokeWeight(data.weight);
+                    line(data.mouseX, data.mouseY, data.pmouseX, data.pmouseY);
                 });
-            }
-
-            socket.on('line', (data) => {
-                stroke(data.color);
-                strokeWeight(data.weight);
-                line(data.mouseX, data.mouseY, data.pmouseX, data.pmouseY);
-            });
-
-            socket.on('users', (data) => {
-                userList.innerHTML = '';
-                data.forEach((user) => {
-                    const li = document.createElement('li');
-                    li.classList.add('users__item');
-                    if(user.active) {
-                        li.classList.add('users__item--active');
-                        li.innerHTML = `${user.username}`;
-                    }
-                    else {
-                        li.innerHTML = `${user.username}`;
-                    }
-                    userList.appendChild(li);
-
-                    if(user.username === username) {
-                        isActive = user.active;
-                    }
+    
+                socket.on('users', (data) => {
+                    userList.innerHTML = '';
+                    data.forEach((user) => {
+                        const li = document.createElement('li');
+                        li.classList.add('users__item');
+                        if(user.active) {
+                            li.classList.add('users__item--active');
+                            li.innerHTML = `${user.username}`;
+                        }
+                        else {
+                            li.innerHTML = `${user.username}`;
+                        }
+                        userList.appendChild(li);
+    
+                        if(user.username === username) {
+                            isActive = user.active;
+                        }
+                    });
                 });
-            });
-
-            socket.on('clear', () => {
-                clear();
-            });
-
-            socket.on('word', (word) => {
-                alert(`Your word is: ${word}`);
-            })
-        </script>
+    
+                socket.on('clear', () => {
+                    clear();
+                });
+    
+                socket.on('word', (word) => {
+                    alert(`Your word is: ${word}`);
+                })
+            </script>
+        </div>
     </body>
 </html>

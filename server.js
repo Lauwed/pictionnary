@@ -1,5 +1,9 @@
 'use strict'
 
+/* TODO :
+- Vérifier personne par ID et non pas username
+*/
+
 const express = require('express');
 // Associe SocketIO à un serveur HTTP simple
 // Server side
