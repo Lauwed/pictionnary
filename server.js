@@ -34,7 +34,6 @@ let timeout;
 let words = ['apples', 'windows', 'linx'];
 
 function onConnection(socket) {
-    console.log(socket);
     // Handle the event triggered in pictionnary.html
     // named username
     socket.on('username', (username) => {
