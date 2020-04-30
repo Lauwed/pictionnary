@@ -20,12 +20,85 @@
         <ul class="users js-users"></ul>
 
         <script>
+            // Client side
             let socket = io();
             let isActive = false;
 
             const username = prompt('Tell me your name');
 
+            // trigger an event to the socket identified by the string name
             socket.emit('username', username);
+
+            const inputWeight = document.querySelector('.js-weight');
+            const inputColor = document.querySelector('.js-color');
+            const userList = document.querySelector('.js-users');
+
+            function setup() {
+                // Setup ; first function called
+                // Called only once
+                createCanvas(500, 500);
+            }
+
+            function mouseDragged() {
+                // Is called once every time the mouse moves
+                // and a mouse button is pressed
+                if(!isActive) return;
+
+                // Set the weight and color choosed by the user
+                strokeWeight(inputWeight.value);
+                stroke(inputColor.value);
+
+                // Draw a line
+                // pmouseX and pmouseY contains the position
+                // of the mouse or finger in the frame previous
+                // of the current frame, relative to (0,0) of
+                // the canavas
+                line(mouseX, mouseY, pmouseX, pmouseY);
+                // Trigger an event to put the data in the server
+                // by tacking the data as parameters
+                socket.emit('line', {
+                    mouseX,
+                    mouseY,
+                    pmouseX,
+                    pmouseY,
+                    weight: inputWeight.value,
+                    color: inputColor.value
+                });
+            }
+
+            socket.on('line', (data) => {
+                stroke(data.color);
+                strokeWeight(data.weight);
+                line(data.mouseX, data.mouseY, data.pmouseX, data.pmouseY);
+            });
+
+            socket.on('users', (data) => {
+                userList.innerHTML = '';
+                data.forEach((user) => {
+                    const li = document.createElement('li');
+                    li.classList.add('users__item');
+                    if(user.active) {
+                        li.classList.add('users__item--active');
+                        li.innerHTML = `${user.username}`;
+                    }
+                    else {
+                        li.innerHTML = `${user.username}`;
+                    }
+                    userList.appendChild(li);
+
+                    if(user.username === username) {
+                        isActive = user.active;
+                    }
+                });
+            });
+
+            socket.on('clear', () => {
+                clear();
+            });
+
+            socket.on('word', (word) => {
+                alert(`Your word is: ${word}`);
+            })
         </script>
     </body>
 </html>
